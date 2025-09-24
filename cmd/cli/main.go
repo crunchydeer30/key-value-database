@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"kv-db/internal/database"
-	"log"
+	"os"
 
+	"github.com/peterh/liner"
 	"go.uber.org/zap"
 )
 
@@ -12,19 +13,37 @@ func main() {
 	fmt.Println("Starting")
 
 	logger, err := zap.NewDevelopment()
-
 	if err != nil {
-		log.Fatalf("failed to initialize logger %v", err)
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
 	}
 
 	db, err := database.NewDatabase(logger)
 	if err != nil {
-		log.Fatalf("failed to initialize db %v", err)
+		logger.Fatal("failed to initialize database", zap.Error(err))
 	}
 
-	fmt.Println("Database initialized")
+	line := liner.NewLiner()
+	defer line.Close()
 
-	result := db.HandleQuery("GET arg1")
+	line.SetCtrlCAborts(true)
 
-	fmt.Println(result)
+	for {
+		input, err := line.Prompt("> ")
+		if err != nil {
+			fmt.Println("Error reading input:", err)
+			break
+		}
+
+		if input == "exit" {
+			break
+		}
+
+		if input != "" {
+			line.AppendHistory(input)
+		}
+
+		result := db.HandleQuery(input)
+		fmt.Println(result)
+	}
 }

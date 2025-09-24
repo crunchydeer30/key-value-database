@@ -24,10 +24,7 @@ func main() {
 
 	fmt.Println("Database initialized")
 
-	err = db.HandleQuery("GET arg1 arg2")
+	result := db.HandleQuery("GET arg1")
 
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-	fmt.Print("query handled")
+	fmt.Println(result)
 }

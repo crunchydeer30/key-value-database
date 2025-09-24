@@ -27,7 +27,7 @@ func NewParser(logger *zap.Logger) (*Parser, error) {
 	}, nil
 }
 
-func (p *Parser) Parse(queryStr string) (*Command, error) {
+func (p *Parser) Parse(queryStr string) (*Query, error) {
 	queryStr = strings.TrimSpace(queryStr)
 	parts := strings.Fields(queryStr)
 
@@ -41,16 +41,13 @@ func (p *Parser) Parse(queryStr string) (*Command, error) {
 		return nil, ErrInvalidNumberOfArgs
 	}
 
-	command := Command{
-		Name: CommandName(parts[0]),
-		Args: parts[1:],
-	}
+	query := NewQuery(CommandName(parts[0]), parts[1:])
 
-	err := command.validate()
+	err := query.validate()
 	if err != nil {
 		p.logger.Debug("invalid query", zap.String("query", queryStr), zap.Error(err))
 		return nil, err
 	}
 
-	return &command, nil
+	return &query, nil
 }

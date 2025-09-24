@@ -8,12 +8,12 @@ import (
 )
 
 type parserTestCase struct {
-	name      string
-	input     string
-	wantName  CommandName
-	wantArgs  []string
-	wantError bool
-	errType   error
+	name        string
+	input       string
+	wantCommand CommandName
+	wantArgs    []string
+	wantError   bool
+	errType     error
 }
 
 func TestParser_Parse(t *testing.T) {
@@ -22,22 +22,22 @@ func TestParser_Parse(t *testing.T) {
 
 	tests := []parserTestCase{
 		{
-			name:     "valid SET command",
-			input:    "SET weather_2_pm cold_moscow_weather",
-			wantName: SET,
-			wantArgs: []string{"weather_2_pm", "cold_moscow_weather"},
+			name:        "valid SET command",
+			input:       "SET weather_2_pm cold_moscow_weather",
+			wantCommand: SET,
+			wantArgs:    []string{"weather_2_pm", "cold_moscow_weather"},
 		},
 		{
-			name:     "valid GET command",
-			input:    "GET key123",
-			wantName: GET,
-			wantArgs: []string{"key123"},
+			name:        "valid GET command",
+			input:       "GET key123",
+			wantCommand: GET,
+			wantArgs:    []string{"key123"},
 		},
 		{
-			name:     "valid DEL command",
-			input:    "DEL key_to_delete",
-			wantName: DEL,
-			wantArgs: []string{"key_to_delete"},
+			name:        "valid DEL command",
+			input:       "DEL key_to_delete",
+			wantCommand: DEL,
+			wantArgs:    []string{"key_to_delete"},
 		},
 		{
 			name:      "unknown command",
@@ -64,16 +64,16 @@ func TestParser_Parse(t *testing.T) {
 			errType:   ErrInvalidQuery,
 		},
 		{
-			name:     "extra spaces between words",
-			input:    "SET   key   value",
-			wantName: SET,
-			wantArgs: []string{"key", "value"},
+			name:        "extra spaces between words",
+			input:       "SET   key   value",
+			wantCommand: SET,
+			wantArgs:    []string{"key", "value"},
 		},
 		{
-			name:     "arguments with / and *",
-			input:    "SET /path/to/file value*",
-			wantName: SET,
-			wantArgs: []string{"/path/to/file", "value*"},
+			name:        "arguments with / and *",
+			input:       "SET /path/to/file value*",
+			wantCommand: SET,
+			wantArgs:    []string{"/path/to/file", "value*"},
 		},
 		{
 			name:      "empty argument",
@@ -94,10 +94,10 @@ func TestParser_Parse(t *testing.T) {
 			errType:   ErrInvalidNumberOfArgs,
 		},
 		{
-			name:     "spaces at start and end",
-			input:    "   GET key   ",
-			wantName: GET,
-			wantArgs: []string{"key"},
+			name:        "spaces at start and end",
+			input:       "   GET key   ",
+			wantCommand: GET,
+			wantArgs:    []string{"key"},
 		},
 		{
 			name:      "command without arguments",
@@ -109,7 +109,7 @@ func TestParser_Parse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, err := parser.Parse(tt.input)
+			q, err := parser.Parse(tt.input)
 			if tt.wantError {
 				if err == nil {
 					t.Errorf("expected error but got none")
@@ -124,17 +124,17 @@ func TestParser_Parse(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if cmd.Name != tt.wantName {
-				t.Errorf("expected command %s, got %v", tt.wantName, cmd.Name)
+			if q.Command != tt.wantCommand {
+				t.Errorf("expected command %s, got %v", tt.wantCommand, q.Command)
 			}
 
-			if len(cmd.Args) != len(tt.wantArgs) {
-				t.Fatalf("expected args %v, got %v", tt.wantArgs, cmd.Args)
+			if len(q.Args) != len(tt.wantArgs) {
+				t.Fatalf("expected args %v, got %v", tt.wantArgs, q.Args)
 			}
 
-			for i := range cmd.Args {
-				if cmd.Args[i] != tt.wantArgs[i] {
-					t.Errorf("arg: %d, expected %s, got %s", i, tt.wantArgs[i], cmd.Args[i])
+			for i := range q.Args {
+				if q.Args[i] != tt.wantArgs[i] {
+					t.Errorf("arg: %d, expected %s, got %s", i, tt.wantArgs[i], q.Args[i])
 				}
 			}
 		})

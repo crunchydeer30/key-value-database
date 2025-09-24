@@ -21,23 +21,30 @@ const (
 	delCommandArgsCount = 1
 )
 
-type Command struct {
-	Name CommandName
-	Args []string
+type Query struct {
+	Command CommandName
+	Args    []string
 }
 
-func (c *Command) validate() error {
-	switch c.Name {
+func NewQuery(command CommandName, args []string) Query {
+	return Query{
+		Command: command,
+		Args:    args,
+	}
+}
+
+func (q *Query) validate() error {
+	switch q.Command {
 	case GET:
-		if len(c.Args) != getCommandArgsCount {
+		if len(q.Args) != getCommandArgsCount {
 			return ErrInvalidNumberOfArgs
 		}
 	case SET:
-		if len(c.Args) != setCommandArgsCount {
+		if len(q.Args) != setCommandArgsCount {
 			return ErrInvalidNumberOfArgs
 		}
 	case DEL:
-		if len(c.Args) != delCommandArgsCount {
+		if len(q.Args) != delCommandArgsCount {
 			return ErrInvalidNumberOfArgs
 		}
 	default:

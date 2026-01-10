@@ -2,16 +2,14 @@ package main
 
 import (
 	"fmt"
-	"kv-db/internal/database"
 	"os"
 
+	"github.com/crunchydeer30/key-value-database/internal/database"
 	"github.com/peterh/liner"
 	"go.uber.org/zap"
 )
 
 func main() {
-	fmt.Println("Starting")
-
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
@@ -24,14 +22,18 @@ func main() {
 	}
 
 	line := liner.NewLiner()
-	defer line.Close()
+	defer func() {
+		if err := line.Close(); err != nil {
+			logger.Error("failed to close liner", zap.Error(err))
+		}
+	}()
 
 	line.SetCtrlCAborts(true)
 
 	for {
 		input, err := line.Prompt("> ")
 		if err != nil {
-			fmt.Println("Error reading input:", err)
+			logger.Error("Error reading input:", zap.Error(err))
 			break
 		}
 
@@ -44,6 +46,7 @@ func main() {
 		}
 
 		result := db.HandleQuery(input)
+		//nolint:forbidigo
 		fmt.Println(result)
 	}
 }

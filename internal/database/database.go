@@ -3,11 +3,11 @@ package database
 import (
 	"errors"
 	"fmt"
-	"kv-db/internal/database/compute"
-	"kv-db/internal/database/storage"
-	"kv-db/internal/database/storage/engine"
-	inmemory "kv-db/internal/database/storage/engine/in_memory"
 
+	"github.com/crunchydeer30/key-value-database/internal/database/compute"
+	"github.com/crunchydeer30/key-value-database/internal/database/storage"
+	"github.com/crunchydeer30/key-value-database/internal/database/storage/engine"
+	inmemory "github.com/crunchydeer30/key-value-database/internal/database/storage/engine/in_memory"
 	"go.uber.org/zap"
 )
 
@@ -23,7 +23,7 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 	}
 	logger.Debug("initializing database...")
 
-	logger.Debug("initializing compute layer...")
+	logger.Debug("initializing compute module...")
 
 	compute, err := compute.NewCompute(logger)
 	if err != nil {
@@ -31,23 +31,22 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 		return nil, err
 	}
 
-	logger.Debug("compute layer initialized")
+	logger.Debug("compute module initialized")
 
-	logger.Debug("initializing storage layer...")
+	logger.Debug("initializing storage module...")
 
 	engine, err := inmemory.NewInMemoryEngine(logger)
 	if err != nil {
-		logger.Error("failed to initialize storage layer", zap.Error(err))
+		logger.Error("failed to initialize storage module", zap.Error(err))
 		return nil, err
 	}
 
 	storage, err := storage.NewStorage(engine, logger)
-
 	if err != nil {
-		logger.Error("failed to initialize storage layer", zap.Error(err))
+		logger.Error("failed to initialize storage module", zap.Error(err))
 		return nil, err
 	}
-	logger.Debug("storage layer initialized")
+	logger.Debug("storage module initialized")
 
 	logger.Debug("database initialized")
 	return &Database{
@@ -61,18 +60,17 @@ func (d *Database) HandleQuery(queryStr string) string {
 	d.logger.Debug("database received query", zap.String("query", queryStr))
 
 	query, err := d.compute.Parser.Parse(queryStr)
-
 	if err != nil {
 		d.logger.Debug("invalid query", zap.String("query", queryStr), zap.Error(err))
 		return fmt.Sprintf("invalid query: %s", err.Error())
 	}
 
 	switch query.Command {
-	case compute.CommandName("GET"):
+	case compute.GET:
 		return d.handleGetQuery(query)
-	case compute.CommandName("SET"):
+	case compute.SET:
 		return d.handleSetQuery(query)
-	case compute.CommandName("DEL"):
+	case compute.DEL:
 		return d.handleDelQuery(query)
 	}
 
@@ -82,7 +80,7 @@ func (d *Database) HandleQuery(queryStr string) string {
 func (d *Database) handleGetQuery(query *compute.Query) string {
 	val, err := d.storage.Get(query.Args[0])
 
-	if err == engine.ErrKeyNotFound {
+	if errors.Is(err, engine.ErrKeyNotFound) {
 		return fmt.Sprintf("record with key \"%s\" not found", query.Args[0])
 	}
 
@@ -97,9 +95,13 @@ func (d *Database) handleGetQuery(query *compute.Query) string {
 func (d *Database) handleSetQuery(query *compute.Query) string {
 	args := query.Args
 	err := d.storage.Set(args[0], args[1])
-
 	if err != nil {
-		d.logger.Error("failed to set value", zap.String("key", args[0]), zap.String("value", args[1]), zap.Error(err))
+		d.logger.Error(
+			"failed to set value",
+			zap.String("key", args[0]),
+			zap.String("value", args[1]),
+			zap.Error(err),
+		)
 		return fmt.Sprintf("error: %s", err.Error())
 	}
 
@@ -108,7 +110,6 @@ func (d *Database) handleSetQuery(query *compute.Query) string {
 
 func (d *Database) handleDelQuery(query *compute.Query) string {
 	err := d.storage.Del(query.Args[0])
-
 	if err != nil {
 		d.logger.Error("failed to delete value", zap.String("key", query.Args[0]), zap.Error(err))
 		return fmt.Sprintf("error: %s", err.Error())

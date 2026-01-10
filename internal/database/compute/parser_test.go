@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package compute
 
 import (
@@ -139,5 +140,4 @@ func TestParser_Parse(t *testing.T) {
 			}
 		})
 	}
-
 }

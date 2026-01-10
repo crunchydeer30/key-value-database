@@ -4,8 +4,10 @@ import (
 	"errors"
 )
 
-var ErrInvalidNumberOfArgs = errors.New("invalid number of args")
-var ErrUnknownCommand = errors.New("unknown command")
+var (
+	ErrInvalidNumberOfArgs = errors.New("invalid number of args")
+	ErrUnknownCommand      = errors.New("unknown command")
+)
 
 type CommandName string
 

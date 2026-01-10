@@ -1,0 +1,5 @@
+engine:
+  type: "in_memory"
+
+logger:
+  level: "info"

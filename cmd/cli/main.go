@@ -4,12 +4,27 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/crunchydeer30/key-value-database/internal/config"
 	"github.com/crunchydeer30/key-value-database/internal/database"
 	"github.com/peterh/liner"
 	"go.uber.org/zap"
 )
 
+var ConfigFileName = os.Getenv("CONFIG_FILE_NAME")
+
+const DEFAULT_CONFIG_FILE_NAME = "config.yml"
+
 func main() {
+	if ConfigFileName == "" {
+		ConfigFileName = DEFAULT_CONFIG_FILE_NAME
+	}
+
+	_, err := config.Load(ConfigFileName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config file: %v\n", err)
+		os.Exit(1)
+	}
+
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)

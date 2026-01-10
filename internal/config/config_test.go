@@ -24,18 +24,20 @@ func createTempConfigFile(t *testing.T, yml string) string {
 	return tmpFile.Name()
 }
 
-func createYmlConfig(engineType, loggerLevel string) string {
+func createYmlConfig(engineType, loggerLevel, loggerOutput string) string {
 	return "engine:\n" +
 		"  type: " + engineType + "\n" +
 		"logger:\n" +
-		"  level: " + loggerLevel + "\n"
+		"  level: " + loggerLevel + "\n" +
+		"  output: " + loggerOutput + "\n"
 }
 
 func TestLoadValidConfig(t *testing.T) {
 	engineType := "in_memory"
 	loggerLevel := "debug"
+	loggerOutput := "stdout"
 
-	yml := createYmlConfig(engineType, loggerLevel)
+	yml := createYmlConfig(engineType, loggerLevel, loggerOutput)
 
 	path := createTempConfigFile(t, yml)
 
@@ -54,7 +56,7 @@ func TestLoadValidConfig(t *testing.T) {
 }
 
 func TestLoadInvalidConfigWithValidationFailed(t *testing.T) {
-	yml := createYmlConfig("in_memory", "invalid")
+	yml := createYmlConfig("in_memory", "invalid", "stdout")
 
 	path := createTempConfigFile(t, yml)
 

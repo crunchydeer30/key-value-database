@@ -7,7 +7,7 @@ import (
 )
 
 type Compute struct {
-	Parser *Parser
+	parser *Parser
 	logger *zap.Logger
 }
 
@@ -23,7 +23,11 @@ func NewCompute(logger *zap.Logger) (*Compute, error) {
 	logger.Debug("parser initialized")
 
 	return &Compute{
-		Parser: parser,
+		parser: parser,
 		logger: logger,
 	}, nil
+}
+
+func (c *Compute) Parse(queryStr string) (*Query, error) {
+	return c.parser.Parse(queryStr)
 }

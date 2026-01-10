@@ -19,7 +19,7 @@ type Database struct {
 
 func NewDatabase(logger *zap.Logger) (*Database, error) {
 	if logger == nil {
-		return nil, errors.New("no logger is provided")
+		logger = zap.NewNop()
 	}
 	logger.Debug("initializing database...")
 
@@ -59,7 +59,7 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 func (d *Database) HandleQuery(queryStr string) string {
 	d.logger.Debug("database received query", zap.String("query", queryStr))
 
-	query, err := d.compute.Parser.Parse(queryStr)
+	query, err := d.compute.Parse(queryStr)
 	if err != nil {
 		d.logger.Debug("invalid query", zap.String("query", queryStr), zap.Error(err))
 		return fmt.Sprintf("invalid query: %s", err.Error())
@@ -72,9 +72,9 @@ func (d *Database) HandleQuery(queryStr string) string {
 		return d.handleSetQuery(query)
 	case compute.DEL:
 		return d.handleDelQuery(query)
+	default:
+		return "internal error"
 	}
-
-	return "internal error"
 }
 
 func (d *Database) handleGetQuery(query *compute.Query) string {

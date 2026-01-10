@@ -28,8 +28,8 @@ type Query struct {
 	Args    []string
 }
 
-func NewQuery(command CommandName, args []string) Query {
-	return Query{
+func NewQuery(command CommandName, args []string) *Query {
+	return &Query{
 		Command: command,
 		Args:    args,
 	}

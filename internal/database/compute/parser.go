@@ -49,5 +49,5 @@ func (p *Parser) Parse(queryStr string) (*Query, error) {
 		return nil, err
 	}
 
-	return &query, nil
+	return query, nil
 }

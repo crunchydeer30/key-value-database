@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"errors"
+
 	"github.com/crunchydeer30/key-value-database/internal/database/storage/engine"
 	"go.uber.org/zap"
 )
@@ -11,9 +13,14 @@ type Storage struct {
 }
 
 func NewStorage(e engine.Engine, logger *zap.Logger) (*Storage, error) {
+	if e == nil {
+		return nil, errors.New("engine is nil")
+	}
+
 	if logger == nil {
 		logger = zap.NewNop()
 	}
+
 	return &Storage{
 		engine: e,
 		logger: logger,

@@ -23,7 +23,7 @@ type EngineConfig struct {
 }
 
 type LoggerConfig struct {
-	Level  string `validate:"required,oneof=debug info warn error fatal panic"`
+	Level  string `validate:"required,oneof=debug info warn error"`
 	Output string `validate:"required"`
 }
 

@@ -13,50 +13,55 @@ import (
 
 var ErrInvalidLogLevel = errors.New("invalid log level")
 
-func NewLogger(cfg *config.Config) (*zap.Logger, error) {
+func NewLogger(cfg *config.LoggerConfig) (*zap.Logger, error) {
 	var writer zapcore.WriteSyncer
 	var encoder zapcore.Encoder
 
-	level := zap.NewAtomicLevelAt(parseLevel(cfg.Logger.Level))
+	level, err := parseLevel(cfg.Level)
+	if err != nil {
+		return nil, err
+	}
+
+	atomicLevel := zap.NewAtomicLevelAt(level)
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoder = zapcore.NewJSONEncoder(encoderConfig)
 
-	switch cfg.Logger.Output {
+	switch cfg.Output {
 	case "stdout":
 		writer = zapcore.AddSync(os.Stdout)
 	case "stderr":
 		writer = zapcore.AddSync(os.Stderr)
 	default:
-		dir := filepath.Dir(cfg.Logger.Output)
+		dir := filepath.Dir(cfg.Output)
 		//nolint:gosec
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("create log directory: %w", err)
 		}
 
 		//nolint:gosec
-		file, err := os.OpenFile(cfg.Logger.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		file, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			return nil, fmt.Errorf("open log file: %w", err)
 		}
 		writer = zapcore.AddSync(file)
 	}
 
-	core := zapcore.NewCore(encoder, writer, level)
+	core := zapcore.NewCore(encoder, writer, atomicLevel)
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
 	return logger, nil
 }
 
-func parseLevel(level string) zapcore.Level {
+func parseLevel(level string) (zapcore.Level, error) {
 	switch level {
 	case "debug":
-		return zap.DebugLevel
+		return zap.DebugLevel, nil
 	case "info":
-		return zap.InfoLevel
+		return zap.InfoLevel, nil
 	case "warn":
-		return zap.WarnLevel
+		return zap.WarnLevel, nil
 	case "error":
-		return zap.ErrorLevel
+		return zap.ErrorLevel, nil
 	default:
-		return zap.InfoLevel
+		return zap.InfoLevel, ErrInvalidLogLevel
 	}
 }

@@ -27,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger, err := logger.NewLogger(cfg)
+	logger, err := logger.NewLogger(&cfg.Logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)

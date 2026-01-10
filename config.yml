@@ -2,4 +2,5 @@ engine:
   type: "in_memory"
 
 logger:
-  level: "info"
+  level: "debug"
+  output: "stdout"

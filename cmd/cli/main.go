@@ -1,57 +1,42 @@
+//nolint:forbidigo
 package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 
-	"github.com/crunchydeer30/key-value-database/internal/config"
-	"github.com/crunchydeer30/key-value-database/internal/database"
-	"github.com/crunchydeer30/key-value-database/internal/logger"
+	"github.com/crunchydeer30/key-value-database/internal/network"
 	"github.com/peterh/liner"
-	"go.uber.org/zap"
 )
 
-var ConfigFileName = os.Getenv("CONFIG_FILE_NAME")
-
-const DEFAULT_CONFIG_FILE_NAME = "config.yml"
-
 func main() {
-	if ConfigFileName == "" {
-		ConfigFileName = DEFAULT_CONFIG_FILE_NAME
-	}
-
-	cfg, err := config.Load(ConfigFileName)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load config file: %v\n", err)
-		os.Exit(1)
-	}
-
-	logger, err := logger.NewLogger(&cfg.Logger)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
-		os.Exit(1)
-	}
-
-	db, err := database.NewDatabase(logger)
-	if err != nil {
-		logger.Fatal("failed to initialize database", zap.Error(err))
-	}
+	address := flag.String("address", "localhost:3223", "address of the server")
+	flag.Parse()
 
 	line := liner.NewLiner()
-	defer func() {
-		if err := line.Close(); err != nil {
-			logger.Error("failed to close liner", zap.Error(err))
-		}
-	}()
-
 	line.SetCtrlCAborts(true)
+	//nolint:errcheck
+	defer line.Close()
+
+	fmt.Println("Connecting to server at", *address, "...")
+
+	client, err := network.NewTCPClient(*address)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error connecting to server: %v\n", err)
+		return
+	}
+	//nolint:errcheck
+	defer client.Close()
+
+	fmt.Println("Connected to server")
 
 	for {
 		input, err := line.Prompt("> ")
 		if err != nil {
 			if !errors.Is(err, liner.ErrPromptAborted) {
-				logger.Error("Error reading input:", zap.Error(err))
+				fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 			}
 
 			break
@@ -61,12 +46,26 @@ func main() {
 			break
 		}
 
+		if input == "clear" {
+			_, err := os.Stdout.WriteString("\033[H\033[2J")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error clearing screen: %v\n", err)
+				continue
+			}
+			continue
+		}
+
 		if input != "" {
 			line.AppendHistory(input)
 		}
 
-		result := db.HandleQueryString(input)
+		result, err := client.Send([]byte(input))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error sending message: %v\n", err)
+			continue
+		}
+
 		//nolint:forbidigo
-		fmt.Println(result)
+		fmt.Print(string(result))
 	}
 }

@@ -56,7 +56,13 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 	}, nil
 }
 
-func (d *Database) HandleQuery(queryStr string) string {
+func (d *Database) HandleQuery(data []byte) []byte {
+	queryStr := string(data)
+	result := d.HandleQueryString(queryStr)
+	return []byte(result)
+}
+
+func (d *Database) HandleQueryString(queryStr string) string {
 	d.logger.Debug("database received query", zap.String("query", queryStr))
 
 	query, err := d.compute.Parse(queryStr)

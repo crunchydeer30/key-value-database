@@ -1,14 +1,13 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/crunchydeer30/key-value-database/internal/config"
 	"github.com/crunchydeer30/key-value-database/internal/database"
 	"github.com/crunchydeer30/key-value-database/internal/logger"
-	"github.com/peterh/liner"
+	"github.com/crunchydeer30/key-value-database/internal/network"
 	"go.uber.org/zap"
 )
 
@@ -38,35 +37,15 @@ func main() {
 		logger.Fatal("failed to initialize database", zap.Error(err))
 	}
 
-	line := liner.NewLiner()
-	defer func() {
-		if err := line.Close(); err != nil {
-			logger.Error("failed to close liner", zap.Error(err))
-		}
-	}()
-
-	line.SetCtrlCAborts(true)
-
-	for {
-		input, err := line.Prompt("> ")
-		if err != nil {
-			if !errors.Is(err, liner.ErrPromptAborted) {
-				logger.Error("Error reading input:", zap.Error(err))
-			}
-
-			break
-		}
-
-		if input == "exit" {
-			break
-		}
-
-		if input != "" {
-			line.AppendHistory(input)
-		}
-
-		result := db.HandleQueryString(input)
-		//nolint:forbidigo
-		fmt.Println(result)
+	server, err := network.NewTCPServer(
+		cfg.Network.Address,
+		db.HandleQuery,
+		network.WithLogger(logger),
+		network.WithMaxConnections(cfg.Network.MaxConnections),
+	)
+	if err != nil {
+		logger.Fatal("failed to initialize network server", zap.Error(err))
 	}
+
+	server.Serve()
 }

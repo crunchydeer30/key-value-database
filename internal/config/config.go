@@ -14,8 +14,9 @@ var (
 )
 
 type Config struct {
-	Engine EngineConfig `mapstructure:"engine"`
-	Logger LoggerConfig `mapstructure:"logger"`
+	Engine  EngineConfig  `mapstructure:"engine"`
+	Logger  LoggerConfig  `mapstructure:"logger"`
+	Network NetworkConfig `mapstructure:"network"`
 }
 
 type EngineConfig struct {
@@ -25,6 +26,11 @@ type EngineConfig struct {
 type LoggerConfig struct {
 	Level  string `validate:"required,oneof=debug info warn error"`
 	Output string `validate:"required"`
+}
+
+type NetworkConfig struct {
+	Address        string `validate:"required"`
+	MaxConnections int    `validate:"omitempty,min=1"`
 }
 
 func Load(path string) (*Config, error) {

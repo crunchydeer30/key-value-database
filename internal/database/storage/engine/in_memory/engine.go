@@ -26,13 +26,9 @@ func NewInMemoryEngine(logger *zap.Logger) (engine.Engine, error) {
 }
 
 func (e *InMemoryEngine) Get(key string) (string, error) {
-	e.logger.Debug("in-memory engine received get command", zap.String("key", key))
-
 	e.mtx.RLock()
 	val, ok := e.store[key]
 	defer e.mtx.RUnlock()
-
-	e.logger.Debug("Got value", zap.String("value", val))
 
 	if !ok {
 		return "", engine.ErrKeyNotFound
@@ -42,12 +38,6 @@ func (e *InMemoryEngine) Get(key string) (string, error) {
 }
 
 func (e *InMemoryEngine) Set(key, value string) error {
-	e.logger.Debug(
-		"in-memory engine received set command",
-		zap.String("key", key),
-		zap.String("value", value),
-	)
-
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 
@@ -57,8 +47,6 @@ func (e *InMemoryEngine) Set(key, value string) error {
 }
 
 func (e *InMemoryEngine) Del(key string) error {
-	e.logger.Debug("in-memory engine received delete command", zap.String("key", key))
-
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 

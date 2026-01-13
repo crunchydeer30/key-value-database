@@ -2,9 +2,7 @@ package network
 
 import (
 	"bufio"
-	"fmt"
 	"net"
-	"os"
 )
 
 type TCPClient struct {
@@ -17,12 +15,6 @@ type TCPClient struct {
 func NewTCPClient(address string) (*TCPClient, error) {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error connecting to server: %v\n", err)
-		return nil, err
-	}
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error setting read deadline: %v\n", err)
 		return nil, err
 	}
 
@@ -39,18 +31,15 @@ func NewTCPClient(address string) (*TCPClient, error) {
 
 func (c *TCPClient) Send(data []byte) ([]byte, error) {
 	if _, err := c.writer.WriteString(string(data) + "\n"); err != nil {
-		fmt.Fprintf(os.Stderr, "Error sending message: %v\n", err)
 		return nil, err
 	}
 
 	if err := c.writer.Flush(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error flushing writer: %v\n", err)
 		return nil, err
 	}
 
 	response, err := c.reader.ReadBytes('\n')
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading response: %v\n", err)
 		return nil, err
 	}
 

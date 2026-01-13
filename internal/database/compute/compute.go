@@ -20,7 +20,6 @@ func NewCompute(logger *zap.Logger) (*Compute, error) {
 	if err != nil {
 		return nil, errors.Join(errors.New("failed to initialize parsers"), err)
 	}
-	logger.Debug("parser initialized")
 
 	return &Compute{
 		parser: parser,

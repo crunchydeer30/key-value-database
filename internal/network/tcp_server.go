@@ -56,8 +56,6 @@ func (s *TCPServer) Serve() {
 			continue
 		}
 
-		s.logger.Debug("accepted connection", zap.String("address", conn.RemoteAddr().String()))
-
 		if s.sem != nil {
 			s.sem.Acquire()
 		}
@@ -96,7 +94,6 @@ func (s *TCPServer) handle(conn net.Conn) {
 	for {
 		data, err := r.ReadBytes('\n')
 		if errors.Is(err, io.EOF) {
-			s.logger.Debug("connection closed", zap.String("address", conn.RemoteAddr().String()))
 			return
 		}
 		if err != nil {

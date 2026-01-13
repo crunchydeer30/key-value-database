@@ -21,19 +21,12 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
-	logger.Debug("initializing database...")
-
-	logger.Debug("initializing compute module...")
 
 	compute, err := compute.NewCompute(logger)
 	if err != nil {
 		logger.Error("failed to initialize compute layer", zap.Error(err))
 		return nil, err
 	}
-
-	logger.Debug("compute module initialized")
-
-	logger.Debug("initializing storage module...")
 
 	engine, err := inmemory.NewInMemoryEngine(logger)
 	if err != nil {
@@ -46,9 +39,7 @@ func NewDatabase(logger *zap.Logger) (*Database, error) {
 		logger.Error("failed to initialize storage module", zap.Error(err))
 		return nil, err
 	}
-	logger.Debug("storage module initialized")
 
-	logger.Debug("database initialized")
 	return &Database{
 		compute: compute,
 		storage: storage,
@@ -63,11 +54,8 @@ func (d *Database) HandleQuery(data []byte) []byte {
 }
 
 func (d *Database) HandleQueryString(queryStr string) string {
-	d.logger.Debug("database received query", zap.String("query", queryStr))
-
 	query, err := d.compute.Parse(queryStr)
 	if err != nil {
-		d.logger.Debug("invalid query", zap.String("query", queryStr), zap.Error(err))
 		return fmt.Sprintf("invalid query: %s", err.Error())
 	}
 

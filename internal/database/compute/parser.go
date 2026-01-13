@@ -32,12 +32,10 @@ func (p *Parser) Parse(queryStr string) (*Query, error) {
 	parts := strings.Fields(queryStr)
 
 	if len(parts) == 0 {
-		p.logger.Debug("no tokens in query", zap.String("query", queryStr))
 		return nil, ErrInvalidQuery
 	}
 
 	if len(parts) > maxArgs {
-		p.logger.Debug("too many args in query", zap.String("query", queryStr))
 		return nil, ErrInvalidNumberOfArgs
 	}
 
@@ -45,7 +43,6 @@ func (p *Parser) Parse(queryStr string) (*Query, error) {
 
 	err := query.validate()
 	if err != nil {
-		p.logger.Debug("invalid query", zap.String("query", queryStr), zap.Error(err))
 		return nil, err
 	}
 

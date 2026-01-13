@@ -2,8 +2,11 @@ package network
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"net"
+	"time"
 
 	"github.com/crunchydeer30/key-value-database/internal/sync"
 	"go.uber.org/zap"
@@ -76,6 +79,12 @@ func (s *TCPServer) Serve() {
 				defer s.sem.Release()
 			}
 
+			err := conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
+			if err != nil {
+				s.logger.Error("failed to set read deadline", zap.Error(err))
+				return
+			}
+
 			s.handle(conn)
 		}(conn)
 	}
@@ -86,6 +95,10 @@ func (s *TCPServer) handle(conn net.Conn) {
 
 	for {
 		data, err := r.ReadBytes('\n')
+		if errors.Is(err, io.EOF) {
+			s.logger.Debug("connection closed", zap.String("address", conn.RemoteAddr().String()))
+			return
+		}
 		if err != nil {
 			s.logger.Error("failed to read message", zap.Error(err))
 			return
@@ -96,6 +109,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 
 		if _, err := conn.Write(result); err != nil {
 			s.logger.Error("failed to write response", zap.Error(err))
+			return
 		}
 	}
 }

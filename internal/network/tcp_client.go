@@ -49,23 +49,13 @@ func (c *TCPClient) Send(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	responseLengthBuf := make([]byte, 4)
-	if _, err := io.ReadFull(c.reader, responseLengthBuf); err != nil {
+	response, err := ParsePacket(c.reader)
+	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("server closed connection")
 		}
 
-		return nil, fmt.Errorf("failed to read response length: %w", err)
-	}
-	responseLength := binary.BigEndian.Uint32(responseLengthBuf)
-
-	response := make([]byte, responseLength)
-	if _, err := io.ReadFull(c.reader, response); err != nil {
-		if errors.Is(err, io.EOF) {
-			return nil, fmt.Errorf("server closed connection")
-		}
-
-		return nil, fmt.Errorf("failed to read response payload: %w", err)
+		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
 	return response, nil

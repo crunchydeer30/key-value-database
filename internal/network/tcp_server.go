@@ -88,31 +88,12 @@ func (s *TCPServer) handle(conn net.Conn) {
 	r := bufio.NewReader(conn)
 
 	for {
-		messageLengthBuffer := make([]byte, 4)
-		if _, err := io.ReadFull(r, messageLengthBuffer); err != nil {
+		payload, err := ParsePacket(r)
+		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return
 			}
-			s.logger.Error("failed to read message length header", zap.Error(err))
-			return
-		}
-		messageLength := binary.BigEndian.Uint32(messageLengthBuffer)
-
-		if messageLength > uint32(s.maxMessageSize) {
-			s.logger.Error("message too large",
-				zap.Uint32("messageLength", messageLength),
-				zap.Uint32("maxMessageSize", s.maxMessageSize),
-			)
-			return
-		}
-
-		payload := make([]byte, messageLength)
-		if _, err := io.ReadFull(r, payload); err != nil {
-			if errors.Is(err, io.EOF) {
-				return
-			}
-
-			s.logger.Error("failed to read message payload", zap.Error(err))
+			s.logger.Error("failed to parse packet", zap.Error(err))
 			return
 		}
 

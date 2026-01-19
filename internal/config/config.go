@@ -38,6 +38,12 @@ func Load(path string) (*Config, error) {
 	viper.SetConfigFile(path)
 
 	viper.AutomaticEnv()
+	viper.SetDefault("engine.type", "in_memory")
+	viper.SetDefault("logger.level", "debug")
+	viper.SetDefault("logger.output", "stdout")
+	viper.SetDefault("network.address", "127.0.0.1:3223")
+	viper.SetDefault("network.max_connections", 100)
+	viper.SetDefault("network.max_message_size", 4096)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, errors.Join(ErrReadConfigFailed, err)

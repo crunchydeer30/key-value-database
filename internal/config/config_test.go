@@ -29,7 +29,8 @@ func createYmlConfig(engineType, loggerLevel, loggerOutput string) string {
 		"  type: " + engineType + "\n" +
 		"logger:\n" +
 		"  level: " + loggerLevel + "\n" +
-		"  output: " + loggerOutput + "\n"
+		"  output: " + loggerOutput + "\n" +
+		"network:\n"
 }
 
 func TestLoadValidConfig(t *testing.T) {

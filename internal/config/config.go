@@ -29,8 +29,9 @@ type LoggerConfig struct {
 }
 
 type NetworkConfig struct {
-	Address        string `validate:"required"`
-	MaxConnections int    `validate:"omitempty,min=1"`
+	Address        string `mapstructure:"address" validate:"required"`
+	MaxConnections int    `mapstructure:"max_connections" validate:"omitempty,min=1"`
+	MaxMessageSize int    `mapstructure:"max_message_size" validate:"min=1"`
 }
 
 func Load(path string) (*Config, error) {

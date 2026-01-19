@@ -16,6 +16,7 @@ type TCPServer struct {
 	listener       net.Listener
 	sem            *sync.Semaphore
 	maxConnections int
+	maxMessageSize int
 	logger         *zap.Logger
 	handler        Handler
 }
@@ -30,9 +31,10 @@ func NewTCPServer(addr string, handler Handler, opts ...TCPServerOption) (*TCPSe
 
 	//nolint:exhaustruct
 	s := &TCPServer{
-		listener: listener,
-		handler:  handler,
-		logger:   zap.NewNop(),
+		listener:       listener,
+		handler:        handler,
+		logger:         zap.NewNop(),
+		maxMessageSize: 4096,
 	}
 
 	for _, opt := range opts {
@@ -47,7 +49,7 @@ func NewTCPServer(addr string, handler Handler, opts ...TCPServerOption) (*TCPSe
 }
 
 func (s *TCPServer) Serve() {
-	s.logger.Info("starting TCP server", zap.String("address", s.listener.Addr().String()))
+	s.logger.Info("started TCP server", zap.String("address", s.listener.Addr().String()))
 
 	for {
 		conn, err := s.listener.Accept()
@@ -89,7 +91,8 @@ func (s *TCPServer) Serve() {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
-	r := bufio.NewReader(conn)
+	limitedReader := io.LimitReader(conn, int64(s.maxMessageSize))
+	r := bufio.NewReader(limitedReader)
 
 	for {
 		data, err := r.ReadBytes('\n')

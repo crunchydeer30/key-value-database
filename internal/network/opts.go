@@ -17,3 +17,9 @@ func WithLogger(logger *zap.Logger) TCPServerOption {
 		s.logger = logger
 	}
 }
+
+func WithMaxMessageSize(max int) TCPServerOption {
+	return func(s *TCPServer) {
+		s.maxMessageSize = max
+	}
+}

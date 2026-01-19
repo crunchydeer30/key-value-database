@@ -64,6 +64,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error sending message: %v\n", err)
 			continue
 		}
+		result = append(result, '\n')
 
 		//nolint:forbidigo
 		fmt.Print(string(result))

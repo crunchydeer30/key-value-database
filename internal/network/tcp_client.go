@@ -2,6 +2,10 @@ package network
 
 import (
 	"bufio"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"io"
 	"net"
 )
 
@@ -15,7 +19,7 @@ type TCPClient struct {
 func NewTCPClient(address string) (*TCPClient, error) {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial %s: %w", address, err)
 	}
 
 	reader := bufio.NewReader(conn)
@@ -30,17 +34,38 @@ func NewTCPClient(address string) (*TCPClient, error) {
 }
 
 func (c *TCPClient) Send(data []byte) ([]byte, error) {
-	if _, err := c.writer.WriteString(string(data) + "\n"); err != nil {
-		return nil, err
+	packet := make([]byte, 4+len(data))
+
+	//nolint:gosec
+	binary.BigEndian.PutUint32(packet[0:4], uint32(len(data)))
+
+	copy(packet[4:], data)
+
+	if _, err := c.writer.Write(packet); err != nil {
+		return nil, fmt.Errorf("failed to write request: %w", err)
 	}
 
 	if err := c.writer.Flush(); err != nil {
 		return nil, err
 	}
 
-	response, err := c.reader.ReadBytes('\n')
-	if err != nil {
-		return nil, err
+	responseLengthBuf := make([]byte, 4)
+	if _, err := io.ReadFull(c.reader, responseLengthBuf); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, fmt.Errorf("server closed connection")
+		}
+
+		return nil, fmt.Errorf("failed to read response length: %w", err)
+	}
+	responseLength := binary.BigEndian.Uint32(responseLengthBuf)
+
+	response := make([]byte, responseLength)
+	if _, err := io.ReadFull(c.reader, response); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, fmt.Errorf("server closed connection")
+		}
+
+		return nil, fmt.Errorf("failed to read response payload: %w", err)
 	}
 
 	return response, nil

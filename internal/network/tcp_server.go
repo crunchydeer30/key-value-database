@@ -2,11 +2,11 @@ package network
 
 import (
 	"bufio"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
-	"time"
 
 	"github.com/crunchydeer30/key-value-database/internal/sync"
 	"go.uber.org/zap"
@@ -16,7 +16,7 @@ type TCPServer struct {
 	listener       net.Listener
 	sem            *sync.Semaphore
 	maxConnections int
-	maxMessageSize int
+	maxMessageSize uint32
 	logger         *zap.Logger
 	handler        Handler
 }
@@ -79,35 +79,51 @@ func (s *TCPServer) Serve() {
 				defer s.sem.Release()
 			}
 
-			err := conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
-			if err != nil {
-				s.logger.Error("failed to set read deadline", zap.Error(err))
-				return
-			}
-
 			s.handle(conn)
 		}(conn)
 	}
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
-	limitedReader := io.LimitReader(conn, int64(s.maxMessageSize))
-	r := bufio.NewReader(limitedReader)
+	r := bufio.NewReader(conn)
 
 	for {
-		data, err := r.ReadBytes('\n')
-		if errors.Is(err, io.EOF) {
+		messageLengthBuffer := make([]byte, 4)
+		if _, err := io.ReadFull(r, messageLengthBuffer); err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			s.logger.Error("failed to read message length header", zap.Error(err))
 			return
 		}
-		if err != nil {
-			s.logger.Error("failed to read message", zap.Error(err))
+		messageLength := binary.BigEndian.Uint32(messageLengthBuffer)
+
+		if messageLength > uint32(s.maxMessageSize) {
+			s.logger.Error("message too large",
+				zap.Uint32("messageLength", messageLength),
+				zap.Uint32("maxMessageSize", s.maxMessageSize),
+			)
 			return
 		}
 
-		result := s.handler(data)
-		result = append(result, '\n')
+		payload := make([]byte, messageLength)
+		if _, err := io.ReadFull(r, payload); err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
 
-		if _, err := conn.Write(result); err != nil {
+			s.logger.Error("failed to read message payload", zap.Error(err))
+			return
+		}
+
+		result := s.handler(payload)
+
+		responsePacket := make([]byte, 4+len(result))
+		//nolint:gosec
+		binary.BigEndian.PutUint32(responsePacket[0:4], uint32(len(result)))
+		copy(responsePacket[4:], result)
+
+		if _, err := conn.Write(responsePacket); err != nil {
 			s.logger.Error("failed to write response", zap.Error(err))
 			return
 		}

@@ -2,7 +2,6 @@ package network
 
 import (
 	"bufio"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -34,12 +33,7 @@ func NewTCPClient(address string) (*TCPClient, error) {
 }
 
 func (c *TCPClient) Send(data []byte) ([]byte, error) {
-	packet := make([]byte, 4+len(data))
-
-	//nolint:gosec
-	binary.BigEndian.PutUint32(packet[0:4], uint32(len(data)))
-
-	copy(packet[4:], data)
+	packet := BuildPacket(data)
 
 	if _, err := c.writer.Write(packet); err != nil {
 		return nil, fmt.Errorf("failed to write request: %w", err)

@@ -110,3 +110,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 		}
 	}
 }
+
+func (s *TCPServer) Close() error {
+	return s.listener.Close()
+}
